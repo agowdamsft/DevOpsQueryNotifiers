@@ -1,0 +1,576 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "sharepointonline_1_Connection_Name": {
+      "type": "string",
+      "defaultValue": "sharepointonline-1"
+    },
+    "sharepointonline_1_Connection_DisplayName": {
+      "type": "string",
+      "defaultValue": "amgowda@microsoft.com"
+    },
+    "office365_1_Connection_Name": {
+      "type": "string",
+      "defaultValue": "office365-1"
+    },
+    "office365_1_Connection_DisplayName": {
+      "type": "string",
+      "defaultValue": "amgowda@microsoft.com"
+    },
+    "LogicAppLocation": {
+      "type": "string",
+      "minLength": 1,
+      "allowedValues": [
+        "[resourceGroup().location]",
+        "eastasia",
+        "southeastasia",
+        "centralus",
+        "eastus",
+        "eastus2",
+        "westus",
+        "northcentralus",
+        "southcentralus",
+        "northeurope",
+        "westeurope",
+        "japanwest",
+        "japaneast",
+        "brazilsouth",
+        "australiaeast",
+        "australiasoutheast",
+        "southindia",
+        "centralindia",
+        "westindia",
+        "canadacentral",
+        "canadaeast",
+        "uksouth",
+        "ukwest",
+        "westcentralus",
+        "westus2"
+      ],
+      "defaultValue": "westus"
+    },
+    "LogicAppName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "VSTSNotifiers"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "actions": {
+            "Get_items": {
+              "runAfter": {
+                "Initialize_variable": [
+                  "Succeeded"
+                ]
+              },
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['sharepointonline_1']['connectionId']"
+                  }
+                },
+                "method": "get",
+                "path": "/datasets/@{encodeURIComponent(encodeURIComponent('https://microsoft.sharepoint.com/teams/wpm'))}/tables/@{encodeURIComponent(encodeURIComponent('a12a12ba-02eb-4c9b-87b1-4558b41a33f4'))}/items"
+              }
+            },
+            "Initialize_Field_To_Query": {
+              "type": "InitializeVariable",
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "var_fieldstoret",
+                    "type": "String",
+                    "value": "System.Id,System.Title,System.State,System.Tags,System.CreatedDate,System.CreatedBy,System.Description,System.AreaPath,System.AssignedTo,CSEngineering-V2.City"
+                  }
+                ]
+              },
+              "runAfter": {}
+            },
+            "Initialize_variable": {
+              "type": "InitializeVariable",
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "var_ItemIDS",
+                    "type": "Array"
+                  }
+                ]
+              },
+              "runAfter": {
+                "Work_Item_Count": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Initialize_variable_EmailBody": {
+              "type": "InitializeVariable",
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "var_emailbody",
+                    "type": "String",
+                    "value": "<!DOCTYPE html>\n<html>\n<body><!--<img src=\" https://eestwork.blob.core.windows.net/public/dabpanda.png\"/>--><h1>DevOps Query Results</h1>\n  <p style=\"margin:2em 0em; text-align: left;\">List of engagements resulsted by the query setup:</p>\n<table style=\"width:100%;\" border=\"1\">\n    <thead>\n      <tr>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">Created</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">Area Path</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">State</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">Assigned To</th>         \n        <th style=\"padding-bottom: 1em;\" align=\"left\">Title</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">City</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">Description</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">Tags</th>\n      </tr>\n    </thead>\n    <tbody> \n"
+                  }
+                ]
+              },
+              "runAfter": {
+                "Initialize_Field_To_Query": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Loop_Through_Notifications_List": {
+              "type": "Foreach",
+              "foreach": "@body('Get_items')?['value']",
+              "actions": {
+                "Check_if_Query_Has_Items": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@variables('var_workitemscount')",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Clear_Variable_Work_Items": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "var_workitemscount",
+                        "value": 0
+                      },
+                      "runAfter": {
+                        "Send_an_email": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "End_HTML_EmailBody": {
+                      "type": "AppendToStringVariable",
+                      "inputs": {
+                        "name": "var_emailbody",
+                        "value": "</tbody>\n  </table>\n<br/><br/> If you would like these alerts delivered to your email <a href=\"https://microsoft.sharepoint.com/teams/wpm/Lists/devopsalerts/AllItems.aspx\">Add your name to this list </a>\n</body>\n</html>"
+                      },
+                      "runAfter": {
+                        "For_each_3": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "For_each": {
+                      "type": "Foreach",
+                      "foreach": "@body('Parse_Work_Item_IDs')?['workItems']",
+                      "actions": {
+                        "Append_to_array_variable": {
+                          "type": "AppendToArrayVariable",
+                          "inputs": {
+                            "name": "var_ItemIDS",
+                            "value": "@items('For_each')?['id']"
+                          },
+                          "runAfter": {}
+                        }
+                      },
+                      "runAfter": {}
+                    },
+                    "For_each_3": {
+                      "type": "Foreach",
+                      "foreach": "@body('Parse_JSON_Item_Details')?['value']",
+                      "actions": {
+                        "Append_to_string_variable": {
+                          "type": "AppendToStringVariable",
+                          "inputs": {
+                            "name": "var_emailbody",
+                            "value": "<tr>\n    <td style=\"padding-bottom: 1em;\" align=\"left\">@{items('For_each_3')?['fields']?['System.CreatedDate']}</td>\n<td style=\"padding-bottom: 1em;\" align=\"left\">@{items('For_each_3')?['fields']?['System.AreaPath']}</td>\n        <td style=\"padding-bottom: 1em;\" align=\"left\">@{items('For_each_3')?['fields']?['System.State']}</td>\n        <td style=\"padding-bottom: 1em;\" align=\"left\"><a href=\"mailto:@{items('For_each_3')?['fields']?['System.AssignedTo']}\">@{items('For_each_3')?['fields']?['System.AssignedTo']}</a></td>         \n        <td style=\"padding-bottom: 1em;\" align=\"left\"><a href=\"@{items('For_each_3')?['url']}\">@{items('For_each_3')?['fields']?['System.Title']}</a></td>\n        <td style=\"padding-bottom: 1em;\" align=\"left\">@{items('For_each_3')?['fields']?['CSEngineering-V2.City']}</td>\n        <td style=\"padding-bottom: 1em;\" align=\"left\"></td>\n        <td style=\"padding-bottom: 1em;\" align=\"left\">@{items('For_each_3')?['fields']?['System.Tags']}</td>\n</tr>"
+                          },
+                          "runAfter": {}
+                        }
+                      },
+                      "runAfter": {
+                        "Parse_JSON_Item_Details": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Get_Full_Details_of_Items": {
+                      "type": "Http",
+                      "inputs": {
+                        "method": "GET",
+                        "uri": "https://csefy19.visualstudio.com/DefaultCollection/_apis/wit/workitems?ids=@{join(variables('var_ItemIDS'),',')}&fields=@{variables('var_fieldstoret')}&api-version=1.0",
+                        "authentication": {
+                          "type": "Basic",
+                          "username": "hurlburb",
+                          "password": "SecretToBeEntered"
+                        }
+                      },
+                      "runAfter": {
+                        "For_each": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Parse_JSON_Item_Details": {
+                      "type": "ParseJson",
+                      "inputs": {
+                        "content": "@body('Get_Full_Details_of_Items')",
+                        "schema": {
+                          "properties": {
+                            "count": {
+                              "type": "integer"
+                            },
+                            "value": {
+                              "items": {
+                                "properties": {
+                                  "fields": {
+                                    "properties": {
+                                      "CSEngineering-V2.City": {
+                                        "type": "string"
+                                      },
+                                      "System.AreaPath": {
+                                        "type": "string"
+                                      },
+                                      "System.AssignedTo": {
+                                        "type": "string"
+                                      },
+                                      "System.CreatedBy": {
+                                        "type": "string"
+                                      },
+                                      "System.CreatedDate": {
+                                        "type": "string"
+                                      },
+                                      "System.Description": {
+                                        "type": "string"
+                                      },
+                                      "System.Id": {
+                                        "type": "integer"
+                                      },
+                                      "System.State": {
+                                        "type": "string"
+                                      },
+                                      "System.Tags": {
+                                        "type": "string"
+                                      },
+                                      "System.Title": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "type": "object"
+                                  },
+                                  "id": {
+                                    "type": "integer"
+                                  },
+                                  "rev": {
+                                    "type": "integer"
+                                  },
+                                  "url": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "rev",
+                                  "fields",
+                                  "url"
+                                ],
+                                "type": "object"
+                              },
+                              "type": "array"
+                            }
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "runAfter": {
+                        "Get_Full_Details_of_Items": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Rest_EmailBody": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "var_emailbody",
+                        "value": "<!DOCTYPE html>\n<html>\n<body><!--<img src=\" https://eestwork.blob.core.windows.net/public/dabpanda.png\"/>--><h1>DevOps Query Results</h1>\n  <p style=\"margin:2em 0em; text-align: left;\">List of engagements resulsted by the query setup:</p>\n<table style=\"width:100%;\" border=\"1\">\n    <thead>\n      <tr>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">Created</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">Area Path</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">State</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">Assigned To</th>         \n        <th style=\"padding-bottom: 1em;\" align=\"left\">Title</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">City</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">Description</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">Tags</th>\n      </tr>\n    </thead>\n    <tbody> \n"
+                      },
+                      "runAfter": {
+                        "Clear_Variable_Work_Items": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Send_an_email": {
+                      "type": "ApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connection": {
+                            "name": "@parameters('$connections')['office365_1']['connectionId']"
+                          }
+                        },
+                        "method": "post",
+                        "body": {
+                          "To": "@items('Loop_Through_Notifications_List')?['Subscribers']?['Email']",
+                          "Subject": "@{items('Loop_Through_Notifications_List')?['Title']} - DevOps Query Scheduled Notifications",
+                          "Body": "@variables('var_emailbody')",
+                          "Cc": "@items('Loop_Through_Notifications_List')?['Teams_x0020_Domain_x0020_Channel']",
+                          "Importance": "Normal",
+                          "IsHtml": true
+                        },
+                        "path": "/Mail"
+                      },
+                      "runAfter": {
+                        "End_HTML_EmailBody": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Increment_Count_Items": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "HTTP": {
+                  "type": "Http",
+                  "inputs": {
+                    "method": "GET",
+                    "uri": "https://dev.azure.com/csefy19/CSEng/_apis/wit/wiql/@{items('Loop_Through_Notifications_List')?['QueryID']}/?api-version=4.1",
+                    "authentication": {
+                      "type": "Basic",
+                      "username": "hurlburb",
+                      "password": "SecretToBeEntered"
+                    }
+                  },
+                  "runAfter": {}
+                },
+                "Increment_Count_Items": {
+                  "type": "Foreach",
+                  "foreach": "@body('Parse_Work_Item_IDs')?['workItems']",
+                  "actions": {
+                    "Increment_variable": {
+                      "type": "IncrementVariable",
+                      "inputs": {
+                        "name": "var_workitemscount",
+                        "value": 1
+                      },
+                      "runAfter": {}
+                    }
+                  },
+                  "runAfter": {
+                    "Parse_Work_Item_IDs": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Parse_Work_Item_IDs": {
+                  "type": "ParseJson",
+                  "inputs": {
+                    "content": "@body('HTTP')",
+                    "schema": {
+                      "properties": {
+                        "asOf": {
+                          "type": "string"
+                        },
+                        "columns": {
+                          "items": {
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "referenceName": {
+                                "type": "string"
+                              },
+                              "url": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "referenceName",
+                              "name",
+                              "url"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "queryResultType": {
+                          "type": "string"
+                        },
+                        "queryType": {
+                          "type": "string"
+                        },
+                        "sortColumns": {
+                          "items": {
+                            "properties": {
+                              "descending": {
+                                "type": "boolean"
+                              },
+                              "field": {
+                                "properties": {
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "referenceName": {
+                                    "type": "string"
+                                  },
+                                  "url": {
+                                    "type": "string"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "required": [
+                              "field",
+                              "descending"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "workItems": {
+                          "items": {
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "url": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "url"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "runAfter": {
+                    "HTTP": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Get_items": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Work_Item_Count": {
+              "type": "InitializeVariable",
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "var_workitemscount",
+                    "type": "Integer",
+                    "value": 0
+                  }
+                ]
+              },
+              "runAfter": {
+                "Initialize_variable_EmailBody": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "parameters": {
+            "$connections": {
+              "defaultValue": {},
+              "type": "Object"
+            }
+          },
+          "triggers": {
+            "Recurrence": {
+              "type": "Recurrence",
+              "recurrence": {
+                "frequency": "Week",
+                "interval": 1,
+                "timeZone": "Pacific Standard Time",
+                "schedule": {
+                  "weekDays": [
+                    "Monday"
+                  ],
+                  "hours": [
+                    "9"
+                  ]
+                }
+              }
+            }
+          },
+          "contentVersion": "1.0.0.0",
+          "outputs": {}
+        },
+        "parameters": {
+          "$connections": {
+            "value": {
+              "sharepointonline_1": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', 'westus', '/managedApis/', 'sharepointonline')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('sharepointonline_1_Connection_Name'))]",
+                "connectionName": "[parameters('sharepointonline_1_Connection_Name')]"
+              },
+              "office365_1": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', 'westus', '/managedApis/', 'office365')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('office365_1_Connection_Name'))]",
+                "connectionName": "[parameters('office365_1_Connection_Name')]"
+              }
+            }
+          }
+        }
+      },
+      "name": "[parameters('LogicAppName')]",
+      "type": "Microsoft.Logic/workflows",
+      "location": "[parameters('LogicAppLocation')]",
+      "tags": {
+        "displayName": "LogicApp"
+      },
+      "apiVersion": "2016-06-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/connections', parameters('sharepointonline_1_Connection_Name'))]",
+        "[resourceId('Microsoft.Web/connections', parameters('office365_1_Connection_Name'))]"
+      ]
+    },
+    {
+      "type": "MICROSOFT.WEB/CONNECTIONS",
+      "apiVersion": "2016-06-01",
+      "name": "[parameters('sharepointonline_1_Connection_Name')]",
+      "location": "westus",
+      "properties": {
+        "api": {
+          "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', 'westus', '/managedApis/', 'sharepointonline')]"
+        },
+        "displayName": "[parameters('sharepointonline_1_Connection_DisplayName')]"
+      }
+    },
+    {
+      "type": "MICROSOFT.WEB/CONNECTIONS",
+      "apiVersion": "2016-06-01",
+      "name": "[parameters('office365_1_Connection_Name')]",
+      "location": "westus",
+      "properties": {
+        "api": {
+          "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', 'westus', '/managedApis/', 'office365')]"
+        },
+        "displayName": "[parameters('office365_1_Connection_DisplayName')]"
+      }
+    }
+  ],
+  "outputs": {}
+}

@@ -1,0 +1,900 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "sharepointonline_1_Connection_Name": {
+      "type": "string",
+      "defaultValue": "sharepointonline"
+    },
+    "sharepointonline_1_Connection_DisplayName": {
+      "type": "string",
+      "defaultValue": "amgowda@microsoft.com"
+    },
+    "teams_1_Connection_Name": {
+      "type": "string",
+      "defaultValue": "teams"
+    },
+    "teams_1_Connection_DisplayName": {
+      "type": "string",
+      "defaultValue": "hurlburb@microsoft.com"
+    },
+    "office365_1_Connection_Name": {
+      "type": "string",
+      "defaultValue": "office365"
+    },
+    "office365_1_Connection_DisplayName": {
+      "type": "string",
+      "defaultValue": "thalme@microsoft.com"
+    },
+    "LogicAppLocation": {
+      "type": "string",
+      "minLength": 1,
+      "allowedValues": [
+        "[resourceGroup().location]",
+        "eastasia",
+        "southeastasia",
+        "centralus",
+        "eastus",
+        "eastus2",
+        "westus",
+        "northcentralus",
+        "southcentralus",
+        "northeurope",
+        "westeurope",
+        "japanwest",
+        "japaneast",
+        "brazilsouth",
+        "australiaeast",
+        "australiasoutheast",
+        "southindia",
+        "centralindia",
+        "westindia",
+        "canadacentral",
+        "canadaeast",
+        "uksouth",
+        "ukwest",
+        "westcentralus",
+        "westus2"
+      ],
+      "defaultValue": "westus"
+    },
+    "logicappname": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "DevOpsScheduledNotifications"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "actions": {
+            "Append_end_of_emailBody": {
+              "type": "AppendToStringVariable",
+              "inputs": {
+                "name": "emailBody",
+                "value": "</tbody>\n  </table>\n</body>\n</html>"
+              },
+              "runAfter": {
+                "For_each": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "For_each": {
+              "type": "Foreach",
+              "foreach": "@body('Parse_JSON')?['workItems']",
+              "actions": {
+                "Append_to_emailBody": {
+                  "type": "AppendToStringVariable",
+                  "inputs": {
+                    "name": "emailBody",
+                    "value": "<tr>\n    <td style=\"padding-bottom: 1em;\" align=\"left\">@{body('Parse_JSON_2')?['fields']?['System.CreatedDate']}</td>\n<td style=\"padding-bottom: 1em;\" align=\"left\">@{body('Parse_JSON_2')?['fields']?['System.AreaPath']}</td>\n        <td style=\"padding-bottom: 1em;\" align=\"left\">@{body('Parse_JSON_2')?['fields']?['System.State']}</td>\n        <td style=\"padding-bottom: 1em;\" align=\"left\"><a href=\"mailto:@{body('Parse_JSON_2')?['fields']?['System.AssignedTo']?['uniqueName']}\">@{body('Parse_JSON_2')?['fields']?['System.AssignedTo']?['displayName']}</a></td>         \n        <td style=\"padding-bottom: 1em;\" align=\"left\"><a href=\"@{body('Parse_JSON_2')?['_links']?['html']?['href']}\">@{body('Parse_JSON_2')?['fields']?['System.Title']}</a></td>\n        <td style=\"padding-bottom: 1em;\" align=\"left\">@{body('Parse_JSON_2')?['fields']?['CSEngineering-V2.City']}</td>\n        <td style=\"padding-bottom: 1em;\" align=\"left\">@{substring(body('Parse_JSON_2')?['fields']?['System.Description'], 0, 200)}@{if(greater(length(body('Parse_JSON_2')?['fields']?['System.Description']),200), '...', '')}</td>\n        <td style=\"padding-bottom: 1em;\" align=\"left\">@{body('Parse_JSON_2')?['fields']?['System.Tags']}</td>\n</tr>"
+                  },
+                  "runAfter": {
+                    "Parse_JSON_2": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "HTTP_2": {
+                  "type": "Http",
+                  "inputs": {
+                    "method": "GET",
+                    "uri": "@items('For_each')?['url']",
+                    "authentication": {
+                      "type": "Basic",
+                      "username": "thalme",
+                      "password": "3wfb5ogufv3q2z7sgdcnn63mdymnuz7stcntskixlhk7l4xs5yra"
+                    }
+                  },
+                  "runAfter": {}
+                },
+                "Parse_JSON_2": {
+                  "type": "ParseJson",
+                  "inputs": {
+                    "content": "@body('HTTP_2')",
+                    "schema": {
+                      "properties": {
+                        "_links": {
+                          "properties": {
+                            "fields": {
+                              "properties": {
+                                "href": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "html": {
+                              "properties": {
+                                "href": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "self": {
+                              "properties": {
+                                "href": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "workItemComments": {
+                              "properties": {
+                                "href": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "workItemRevisions": {
+                              "properties": {
+                                "href": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "workItemType": {
+                              "properties": {
+                                "href": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "workItemUpdates": {
+                              "properties": {
+                                "href": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "fields": {
+                          "properties": {
+                            "CSEngineering-V2-Orgs.ExecutiveEscalation": {
+                              "type": "boolean"
+                            },
+                            "CSEngineering-V2-Orgs.HiPo": {
+                              "type": "boolean"
+                            },
+                            "CSEngineering-V2-Orgs.T400": {
+                              "type": "boolean"
+                            },
+                            "CSEngineering-V2-Orgs.TargetedISV": {
+                              "type": "boolean"
+                            },
+                            "CSEngineering-V2.AetherStatus": {
+                              "type": "string"
+                            },
+                            "CSEngineering-V2.AssignedPM": {
+                              "properties": {
+                                "_links": {
+                                  "properties": {
+                                    "avatar": {
+                                      "properties": {
+                                        "href": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "type": "object"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "descriptor": {
+                                  "type": "string"
+                                },
+                                "displayName": {
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "type": "string"
+                                },
+                                "imageUrl": {
+                                  "type": "string"
+                                },
+                                "uniqueName": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "CSEngineering-V2.AzureExclusive": {
+                              "type": "boolean"
+                            },
+                            "CSEngineering-V2.City": {
+                              "type": "string"
+                            },
+                            "CSEngineering-V2.CommsHighlight": {
+                              "type": "boolean"
+                            },
+                            "CSEngineering-V2.CompeteWin": {
+                              "type": "boolean"
+                            },
+                            "CSEngineering-V2.CountrySelection": {
+                              "type": "string"
+                            },
+                            "CSEngineering-V2.EngagementEndDate": {
+                              "type": "string"
+                            },
+                            "CSEngineering-V2.EngagementStartDate": {
+                              "type": "string"
+                            },
+                            "CSEngineering-V2.EngagementType": {
+                              "type": "string"
+                            },
+                            "CSEngineering-V2.OverallStatus": {
+                              "type": "string"
+                            },
+                            "CSEngineering-V2.SEIorSEDWR": {
+                              "properties": {
+                                "_links": {
+                                  "properties": {
+                                    "avatar": {
+                                      "properties": {
+                                        "href": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "type": "object"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "descriptor": {
+                                  "type": "string"
+                                },
+                                "displayName": {
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "type": "string"
+                                },
+                                "imageUrl": {
+                                  "type": "string"
+                                },
+                                "uniqueName": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "Custom.CustomerReadinessReviewComplete": {
+                              "type": "boolean"
+                            },
+                            "Custom.DevCrewRequested": {
+                              "type": "boolean"
+                            },
+                            "Custom.EngagementStatusReasonText": {
+                              "type": "string"
+                            },
+                            "Custom.M2ManagerApproved": {
+                              "type": "boolean"
+                            },
+                            "Custom.M3ManagerApproved": {
+                              "type": "boolean"
+                            },
+                            "Custom.OpenHackCoachesRequested": {
+                              "type": "boolean"
+                            },
+                            "Custom.Region": {
+                              "type": "string"
+                            },
+                            "Custom.ReleasedtoDevCrews": {
+                              "type": "boolean"
+                            },
+                            "Custom.SETRequested": {
+                              "type": "boolean"
+                            },
+                            "Custom.VMExecOverride": {
+                              "type": "string"
+                            },
+                            "System.AreaPath": {
+                              "type": "string"
+                            },
+                            "System.AssignedTo": {
+                              "properties": {
+                                "_links": {
+                                  "properties": {
+                                    "avatar": {
+                                      "properties": {
+                                        "href": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "type": "object"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "descriptor": {
+                                  "type": "string"
+                                },
+                                "displayName": {
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "type": "string"
+                                },
+                                "imageUrl": {
+                                  "type": "string"
+                                },
+                                "uniqueName": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "System.BoardColumn": {
+                              "type": "string"
+                            },
+                            "System.BoardColumnDone": {
+                              "type": "boolean"
+                            },
+                            "System.ChangedBy": {
+                              "properties": {
+                                "_links": {
+                                  "properties": {
+                                    "avatar": {
+                                      "properties": {
+                                        "href": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "type": "object"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "descriptor": {
+                                  "type": "string"
+                                },
+                                "displayName": {
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "type": "string"
+                                },
+                                "imageUrl": {
+                                  "type": "string"
+                                },
+                                "uniqueName": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "System.ChangedDate": {
+                              "type": "string"
+                            },
+                            "System.CommentCount": {
+                              "type": "integer"
+                            },
+                            "System.CreatedBy": {
+                              "properties": {
+                                "_links": {
+                                  "properties": {
+                                    "avatar": {
+                                      "properties": {
+                                        "href": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "type": "object"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "descriptor": {
+                                  "type": "string"
+                                },
+                                "displayName": {
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "type": "string"
+                                },
+                                "imageUrl": {
+                                  "type": "string"
+                                },
+                                "uniqueName": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "System.CreatedDate": {
+                              "type": "string"
+                            },
+                            "System.Description": {
+                              "type": "string"
+                            },
+                            "System.IterationPath": {
+                              "type": "string"
+                            },
+                            "System.Reason": {
+                              "type": "string"
+                            },
+                            "System.State": {
+                              "type": "string"
+                            },
+                            "System.Tags": {
+                              "type": "string"
+                            },
+                            "System.TeamProject": {
+                              "type": "string"
+                            },
+                            "System.Title": {
+                              "type": "string"
+                            },
+                            "System.WorkItemType": {
+                              "type": "string"
+                            },
+                            "WEF_4C6CAFE4F116471DB712DDE3DDF27063_Kanban.Column": {
+                              "type": "string"
+                            },
+                            "WEF_4C6CAFE4F116471DB712DDE3DDF27063_Kanban.Column.Done": {
+                              "type": "boolean"
+                            },
+                            "WEF_58523709552648EE8DCF12DFCB8BCEFE_Kanban.Column": {
+                              "type": "string"
+                            },
+                            "WEF_58523709552648EE8DCF12DFCB8BCEFE_Kanban.Column.Done": {
+                              "type": "boolean"
+                            },
+                            "WEF_89611113C86A4DCA9A9BFE51FA6FBC95_Kanban.Column": {
+                              "type": "string"
+                            },
+                            "WEF_89611113C86A4DCA9A9BFE51FA6FBC95_Kanban.Column.Done": {
+                              "type": "boolean"
+                            },
+                            "WEF_AE20281CD1B14D679880148177A9F513_Kanban.Column": {
+                              "type": "string"
+                            },
+                            "WEF_AE20281CD1B14D679880148177A9F513_Kanban.Column.Done": {
+                              "type": "boolean"
+                            },
+                            "WEF_B973F8A84FE74A308F66B20ED49EF1A8_Kanban.Column": {
+                              "type": "string"
+                            },
+                            "WEF_B973F8A84FE74A308F66B20ED49EF1A8_Kanban.Column.Done": {
+                              "type": "boolean"
+                            },
+                            "WEF_DF373FF8CF434EEDA075F238C814EBAC_Kanban.Column": {
+                              "type": "string"
+                            },
+                            "WEF_DF373FF8CF434EEDA075F238C814EBAC_Kanban.Column.Done": {
+                              "type": "boolean"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "id": {
+                          "type": "integer"
+                        },
+                        "rev": {
+                          "type": "integer"
+                        },
+                        "url": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "runAfter": {
+                    "HTTP_2": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Init_emailBody": [
+                  "Succeeded"
+                ]
+              },
+              "runtimeConfiguration": {
+                "concurrency": {
+                  "repetitions": 50
+                }
+              }
+            },
+            "For_each_2": {
+              "type": "Foreach",
+              "foreach": "@body('Get_item')['Subscribers']",
+              "actions": {
+                "Append_subscriber_email_to_toemails": {
+                  "type": "AppendToStringVariable",
+                  "inputs": {
+                    "name": "toemails",
+                    "value": "@{items('For_each_2')?['Email']};"
+                  },
+                  "runAfter": {}
+                }
+              },
+              "runAfter": {
+                "Init_toemails": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Get_Work_Items_from_DAP_1-week_slice_query": {
+              "type": "Http",
+              "inputs": {
+                "method": "GET",
+                "uri": "https://dev.azure.com/csefy19/CSEng/_apis/wit/wiql/05850097-50a5-499d-8d22-921b15d036d1?api-version=4.1",
+                "authentication": {
+                  "type": "Basic",
+                  "username": "hurlburb",
+                  "password": "fvbmhggem3qddycyj3vdn3owekxmtxe6xbdwyyurlyvpggbqiccq"
+                }
+              },
+              "runAfter": {}
+            },
+            "Get_item": {
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['sharepointonline']['connectionId']"
+                  }
+                },
+                "method": "get",
+                "path": "/datasets/@{encodeURIComponent(encodeURIComponent('https://microsoft.sharepoint.com/teams/wpm/CE/dap'))}/tables/@{encodeURIComponent(encodeURIComponent('b532c83a-6da8-4bb5-a815-2b9d9816fde8'))}/items/@{encodeURIComponent('1')}"
+              },
+              "runAfter": {
+                "Append_end_of_emailBody": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Init_emailBody": {
+              "type": "InitializeVariable",
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "emailBody",
+                    "type": "String",
+                    "value": "<!DOCTYPE html>\n<html>\n<body><!--<img src=\" https://eestwork.blob.core.windows.net/public/dabpanda.png\"/>--><h1>Latest CSE DAP engagements</h1>\n  <p style=\"margin:2em 0em; text-align: left;\">Here are the the new engagements that have been entered into CSE Eng for the Developer Platform App Domain in the last week:</p>\n<table style=\"width:100%;\" border=\"1\">\n    <thead>\n      <tr>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">Created</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">Area Path</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">State</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">Assigned To</th>         \n        <th style=\"padding-bottom: 1em;\" align=\"left\">Title</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">City</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">Description</th>\n        <th style=\"padding-bottom: 1em;\" align=\"left\">Tags</th>\n      </tr>\n    </thead>\n    <tbody> \n"
+                  }
+                ]
+              },
+              "runAfter": {
+                "Parse_JSON": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Init_toemails": {
+              "type": "InitializeVariable",
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "toemails",
+                    "type": "String"
+                  }
+                ]
+              },
+              "runAfter": {
+                "Get_item": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Parse_JSON": {
+              "type": "ParseJson",
+              "inputs": {
+                "content": "@body('Get_Work_Items_from_DAP_1-week_slice_query')",
+                "schema": {
+                  "properties": {
+                    "asOf": {
+                      "type": "string"
+                    },
+                    "columns": {
+                      "items": {
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "referenceName": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "referenceName",
+                          "name",
+                          "url"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "queryResultType": {
+                      "type": "string"
+                    },
+                    "queryType": {
+                      "type": "string"
+                    },
+                    "sortColumns": {
+                      "items": {
+                        "properties": {
+                          "descending": {
+                            "type": "boolean"
+                          },
+                          "field": {
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "referenceName": {
+                                "type": "string"
+                              },
+                              "url": {
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "field",
+                          "descending"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "workItems": {
+                      "items": {
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "url": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "url"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "runAfter": {
+                "Get_Work_Items_from_DAP_1-week_slice_query": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Post_message": {
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['teams']['connectionId']"
+                  }
+                },
+                "method": "post",
+                "body": {
+                  "rootMessage": {
+                    "body": {
+                      "content": "@{variables('emailBody')}<br/><br/> If you would like these alerts delivered to you via email <a href=\"https://microsoft.sharepoint.com/teams/wpm/CE/dap/Lists/DAPAlertsSubscribe/DispForm.aspx?ID=1&e=3WQheA\">subscribe here</a>.",
+                      "contentType": 1
+                    }
+                  }
+                },
+                "path": "/beta/groups/@{encodeURIComponent('df6d233f-a61d-4d69-a68f-8053dffb2427')}/channels/@{encodeURIComponent('19:1300a737cfc240478b0087747737fd8c@thread.skype')}/chatThreads"
+              },
+              "runAfter": {
+                "Append_end_of_emailBody": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Send_email_to_owners_on_failure": {
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['office365']['connectionId']"
+                  }
+                },
+                "method": "post",
+                "body": {
+                  "To": "hurlburb@microsoft.com;amgowda@microsoft.com;thalme@microsoft.com",
+                  "Subject": "Latest DAP Engagement run failed",
+                  "Body": "Check the latest runs <a href=\"https://ms.portal.azure.com/#@microsoft.onmicrosoft.com/resource/subscriptions/2bcd95b1-1835-4d41-92ac-60c9c434ffd0/resourceGroups/eestwork/providers/Microsoft.Logic/workflows/DevAppPlatEngagementsAlerts/logicApp\">here</a>"
+                },
+                "path": "/Mail"
+              },
+              "runAfter": {
+                "Post_message": [
+                  "Failed"
+                ],
+                "Send_email_to_subscribers": [
+                  "Failed"
+                ]
+              }
+            },
+            "Send_email_to_subscribers": {
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['office365']['connectionId']"
+                  }
+                },
+                "method": "post",
+                "body": {
+                  "To": "@variables('toemails')",
+                  "Subject": "New DAP Engagements for the past week",
+                  "Body": "@variables('emailBody')",
+                  "Importance": "Normal",
+                  "IsHtml": true
+                },
+                "path": "/Mail"
+              },
+              "runAfter": {
+                "For_each_2": [
+                  "Succeeded"
+                ]
+              }
+            }
+          },
+          "parameters": {
+            "$connections": {
+              "defaultValue": {},
+              "type": "Object"
+            }
+          },
+          "triggers": {
+            "Recurrence": {
+              "type": "Recurrence",
+              "recurrence": {
+                "frequency": "Week",
+                "interval": 1,
+                "timeZone": "Pacific Standard Time",
+                "schedule": {
+                  "weekDays": [
+                    "Monday"
+                  ],
+                  "hours": [
+                    "9"
+                  ]
+                }
+              }
+            }
+          },
+          "contentVersion": "1.0.0.0",
+          "outputs": {}
+        },
+        "parameters": {
+          "$connections": {
+            "value": {
+              "sharepointonline": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', 'westus', '/managedApis/', 'sharepointonline')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('sharepointonline_1_Connection_Name'))]",
+                "connectionName": "[parameters('sharepointonline_1_Connection_Name')]"
+              },
+              "teams": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', 'westus', '/managedApis/', 'teams')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('teams_1_Connection_Name'))]",
+                "connectionName": "[parameters('teams_1_Connection_Name')]"
+              },
+              "office365": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', 'westus', '/managedApis/', 'office365')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('office365_1_Connection_Name'))]",
+                "connectionName": "[parameters('office365_1_Connection_Name')]"
+              }
+            }
+          }
+        }
+      },
+      "name": "[parameters('logicappname')]",
+      "type": "Microsoft.Logic/workflows",
+      "location": "[parameters('LogicAppLocation')]",
+      "tags": {
+        "displayName": "LogicApp"
+      },
+      "apiVersion": "2016-06-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/connections', parameters('sharepointonline_1_Connection_Name'))]",
+        "[resourceId('Microsoft.Web/connections', parameters('teams_1_Connection_Name'))]",
+        "[resourceId('Microsoft.Web/connections', parameters('office365_1_Connection_Name'))]"
+      ]
+    },
+    {
+      "type": "MICROSOFT.WEB/CONNECTIONS",
+      "apiVersion": "2016-06-01",
+      "name": "[parameters('sharepointonline_1_Connection_Name')]",
+      "location": "westus",
+      "properties": {
+        "api": {
+          "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', 'westus', '/managedApis/', 'sharepointonline')]"
+        },
+        "displayName": "[parameters('sharepointonline_1_Connection_DisplayName')]"
+      }
+    },
+    {
+      "type": "MICROSOFT.WEB/CONNECTIONS",
+      "apiVersion": "2016-06-01",
+      "name": "[parameters('teams_1_Connection_Name')]",
+      "location": "westus",
+      "properties": {
+        "api": {
+          "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', 'westus', '/managedApis/', 'teams')]"
+        },
+        "displayName": "[parameters('teams_1_Connection_DisplayName')]"
+      }
+    },
+    {
+      "type": "MICROSOFT.WEB/CONNECTIONS",
+      "apiVersion": "2016-06-01",
+      "name": "[parameters('office365_1_Connection_Name')]",
+      "location": "westus",
+      "properties": {
+        "api": {
+          "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', 'westus', '/managedApis/', 'office365')]"
+        },
+        "displayName": "[parameters('office365_1_Connection_DisplayName')]"
+      }
+    }
+  ],
+  "outputs": {}
+}

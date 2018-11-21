@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{151D2E53-A2C4-4D7D-83FE-D05416EBD58E}") = "LogicAppNotifications", "LogicAppNotifications\LogicAppNotifications.deployproj", "{B21CBAD2-81D8-4C94-A24F-EBCF91113439}"
+	ProjectSection(ProjectDependencies) = postProject
+		{EEF62336-6303-4527-91A2-6C3F862F1806} = {EEF62336-6303-4527-91A2-6C3F862F1806}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelperFunctions", "JsonToCommaSepWorkItems\HelperFunctions.csproj", "{EEF62336-6303-4527-91A2-6C3F862F1806}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B21CBAD2-81D8-4C94-A24F-EBCF91113439}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B21CBAD2-81D8-4C94-A24F-EBCF91113439}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B21CBAD2-81D8-4C94-A24F-EBCF91113439}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B21CBAD2-81D8-4C94-A24F-EBCF91113439}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EEF62336-6303-4527-91A2-6C3F862F1806}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EEF62336-6303-4527-91A2-6C3F862F1806}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EEF62336-6303-4527-91A2-6C3F862F1806}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EEF62336-6303-4527-91A2-6C3F862F1806}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {48856819-1ED5-4CB2-96C8-52C59A7167DE}
+	EndGlobalSection
+EndGlobal
