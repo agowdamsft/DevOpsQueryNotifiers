@@ -20,3 +20,6 @@ This workflow will query the list of items that need to be processed from a Shar
 
 ## Deployment
 This is a ARM template with connectors parameterized. Right click on VS 2017 Solution and Deploy to Azure. After successful deployment you will have open this Logic Apps in Azure Portal designer to edit and re authenticate on the Office connectors. Those items will be marked in Yellow warning sign in the portal.
+
+
+Thanks to @nzthiago and @brandonh-msft for thier contributions.
